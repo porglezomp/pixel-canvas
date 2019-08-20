@@ -1,7 +1,6 @@
 use glium::{
     glutin::{
-        self,
-        event::{Event, StartCause},
+        event::{Event, StartCause, WindowEvent},
         event_loop::ControlFlow,
     },
     texture::{ClientFormat, RawImage2d, Texture2dDataSource},
@@ -12,6 +11,8 @@ use std::{
     ops::{Index, IndexMut},
     time::{Duration, Instant},
 };
+
+pub use glium::glutin;
 
 #[repr(C)]
 #[derive(Copy, Clone, Default)]
@@ -34,6 +35,10 @@ impl Image {
 
     pub fn height(&self) -> u32 {
         self.height
+    }
+
+    pub fn pixels_mut(&mut self) -> &mut [Color] {
+        &mut self.pixels
     }
 
     pub fn new(width: u32, height: u32) -> Image {
@@ -72,33 +77,78 @@ impl<'a> Texture2dDataSource<'a> for &'a Image {
     }
 }
 
-pub struct Canvas {
+pub struct Canvas<State> {
     width: u32,
     height: u32,
     title: String,
     image: Image,
+    state: State,
+    event_handler: Option<Box<dyn FnMut(&Image, &mut State, &Event<()>)>>,
 }
 
-impl Canvas {
-    pub fn new(width: u32, height: u32) -> Self {
+#[derive(Default)]
+pub struct MouseState {
+    pub x: i32,
+    pub y: i32,
+}
+
+impl MouseState {
+    pub fn handle(image: &Image, mouse: &mut MouseState, event: &Event<()>) {
+        match event {
+            Event::WindowEvent {
+                event: WindowEvent::CursorMoved { position, .. },
+                ..
+            } => {
+                let (x, y): (i32, i32) = (*position).into();
+                mouse.x = x;
+                mouse.y = image.height() as i32 - y;
+            }
+            _ => (),
+        }
+    }
+}
+
+impl<State> Canvas<State>
+where
+    State: 'static,
+{
+    pub fn new(width: u32, height: u32, state: State) -> Canvas<State> {
         Canvas {
             width,
             height,
             title: "Canvas".into(),
             image: Image::new(width, height),
+            state,
+            event_handler: None,
         }
     }
 
-    pub fn title(self, text: impl Into<String>) -> Canvas {
+    pub fn title(self, text: impl Into<String>) -> Self {
         Self {
             title: text.into(),
             ..self
         }
     }
 
-    pub fn render(mut self, mut callback: impl FnMut(&mut Image) + 'static) {
+    pub fn handle_events(
+        self,
+        callback: impl FnMut(&Image, &mut State, &Event<()>) + 'static,
+    ) -> Self {
+        Self {
+            event_handler: Some(Box::new(callback)),
+            ..self
+        }
+    }
+
+    pub fn render(mut self, mut callback: impl FnMut(&mut State, &mut Image) + 'static) {
         let event_loop = glutin::event_loop::EventLoop::new();
-        let wb = glutin::window::WindowBuilder::new().with_title(&self.title);
+        let wb = glutin::window::WindowBuilder::new()
+            .with_title(&self.title)
+            .with_inner_size(glutin::dpi::LogicalSize::new(
+                self.width as f64,
+                self.height as f64,
+            ))
+            .with_resizable(false);
         let cb = glutin::ContextBuilder::new().with_vsync(true);
         let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
@@ -117,7 +167,7 @@ impl Canvas {
             match event {
                 Event::NewEvents(StartCause::ResumeTimeReached { .. })
                 | Event::NewEvents(StartCause::Init) => {
-                    callback(&mut self.image);
+                    callback(&mut self.state, &mut self.image);
                     texture.write(
                         Rect {
                             left: 0,
@@ -142,7 +192,11 @@ impl Canvas {
                 } => {
                     *control_flow = ControlFlow::Exit;
                 }
-                _ => (),
+                event => {
+                    if let Some(handler) = &mut self.event_handler {
+                        handler(&self.image, &mut self.state, &event)
+                    }
+                }
             }
         })
     }
