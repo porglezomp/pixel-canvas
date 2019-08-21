@@ -1,3 +1,4 @@
+#![feature(specialization)]
 use glium::{
     glutin::{
         event::{Event, StartCause, WindowEvent},
@@ -77,13 +78,15 @@ impl<'a> Texture2dDataSource<'a> for &'a Image {
     }
 }
 
-pub struct Canvas<State> {
+type HandleFn<State> = fn(&Image, &mut State, &Event<()>);
+
+pub struct Canvas<State, Handler = HandleFn<State>> {
     width: u32,
     height: u32,
     title: String,
     image: Image,
     state: State,
-    event_handler: Option<Box<dyn FnMut(&Image, &mut State, &Event<()>)>>,
+    event_handler: Handler,
 }
 
 #[derive(Default)]
@@ -108,18 +111,32 @@ impl MouseState {
     }
 }
 
-impl<State> Canvas<State>
-where
-    State: 'static,
-{
-    pub fn new(width: u32, height: u32, state: State) -> Canvas<State> {
+impl Canvas<()> {
+    pub fn new(width: u32, height: u32) -> Canvas<()> {
         Canvas {
             width,
             height,
             title: "Canvas".into(),
             image: Image::new(width, height),
+            state: (),
+            event_handler: |_, (), _| {},
+        }
+    }
+}
+
+impl<State, Handler> Canvas<State, Handler>
+where
+    Handler: FnMut(&Image, &mut State, &Event<()>) + 'static,
+    State: 'static,
+{
+    pub fn state<NewState>(self, state: NewState) -> Canvas<NewState, HandleFn<NewState>> {
+        Canvas {
+            width: self.width,
+            height: self.height,
+            title: self.title,
+            image: self.image,
             state,
-            event_handler: None,
+            event_handler: |_, _, _| {},
         }
     }
 
@@ -130,13 +147,17 @@ where
         }
     }
 
-    pub fn handle_events(
-        self,
-        callback: impl FnMut(&Image, &mut State, &Event<()>) + 'static,
-    ) -> Self {
-        Self {
-            event_handler: Some(Box::new(callback)),
-            ..self
+    pub fn input<NewHandler>(self, callback: NewHandler) -> Canvas<State, NewHandler>
+    where
+        NewHandler: FnMut(&Image, &mut State, &Event<()>) + 'static,
+    {
+        Canvas {
+            width: self.width,
+            height: self.height,
+            title: self.title,
+            image: self.image,
+            state: self.state,
+            event_handler: callback,
         }
     }
 
@@ -192,11 +213,7 @@ where
                 } => {
                     *control_flow = ControlFlow::Exit;
                 }
-                event => {
-                    if let Some(handler) = &mut self.event_handler {
-                        handler(&self.image, &mut self.state, &event)
-                    }
-                }
+                event => (self.event_handler)(&self.image, &mut self.state, &event),
             }
         })
     }
