@@ -9,7 +9,7 @@ use glium::{
 };
 use std::{
     borrow::Cow,
-    ops::{Index, IndexMut},
+    ops::{Index, IndexMut, Deref, DerefMut},
     time::{Duration, Instant},
 };
 
@@ -64,6 +64,19 @@ impl IndexMut<(u32, u32)> for Image {
     }
 }
 
+impl Deref for Image {
+    type Target = [Color];
+    fn deref(&self) -> &Self::Target {
+        &self.pixels
+    }
+}
+
+impl DerefMut for Image {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.pixels
+    }
+}
+
 impl<'a> Texture2dDataSource<'a> for &'a Image {
     type Data = u8;
     fn into_raw(self) -> RawImage2d<'a, Self::Data> {
@@ -86,6 +99,7 @@ pub struct CanvasInfo {
     title: String,
     hidpi: bool,
     dpi: f64,
+    show_ms: bool,
 }
 
 pub struct Canvas<State, Handler = HandleFn<State>> {
@@ -103,11 +117,19 @@ pub struct MouseState {
 
 impl MouseState {
     pub fn new() -> Self {
-        Self { x: 0, y: 0, physical_pixels: false }
+        Self {
+            x: 0,
+            y: 0,
+            physical_pixels: false,
+        }
     }
 
     pub fn physical() -> Self {
-        Self { x: 0, y: 0, physical_pixels: true }
+        Self {
+            x: 0,
+            y: 0,
+            physical_pixels: true,
+        }
     }
 
     pub fn handle(info: &CanvasInfo, mouse: &mut MouseState, event: &Event<()>) {
@@ -138,6 +160,7 @@ impl Canvas<()> {
                 hidpi: true,
                 dpi: 1.0,
                 title: "Canvas".into(),
+                show_ms: false,
             },
             image: Image::new(width, height),
             state: (),
@@ -174,6 +197,16 @@ where
         Self {
             info: CanvasInfo {
                 hidpi: enabled,
+                ..self.info
+            },
+            ..self
+        }
+    }
+
+    pub fn show_ms(self, enabled: bool) -> Self {
+        Self {
+            info: CanvasInfo {
+                show_ms: enabled,
                 ..self.info
             },
             ..self
@@ -229,6 +262,9 @@ where
             match event {
                 Event::NewEvents(StartCause::ResumeTimeReached { .. })
                 | Event::NewEvents(StartCause::Init) => {
+                    next_frame_time = Instant::now() + Duration::from_nanos(16_666_667);
+                    let frame_start = Instant::now();
+
                     callback(&mut self.state, &mut self.image);
                     texture.write(
                         Rect {
@@ -246,7 +282,10 @@ where
                         .fill(&target, glium::uniforms::MagnifySamplerFilter::Linear);
                     target.finish().unwrap();
 
-                    next_frame_time = Instant::now() + Duration::from_nanos(16_666_667);
+                    let frame_end = Instant::now();
+                    if self.info.show_ms {
+                        display.gl_window().window().set_title(&format!("{} - {:3}ms", self.info.title, frame_end.duration_since(frame_start).as_millis()));
+                    }
                 }
                 glutin::event::Event::WindowEvent {
                     event: glutin::event::WindowEvent::CloseRequested,

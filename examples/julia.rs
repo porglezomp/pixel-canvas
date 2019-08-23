@@ -19,6 +19,7 @@ fn step(c: (f32, f32), z: (f32, f32)) -> (f32, f32) {
 fn main() {
     let canvas = Canvas::new(1280, 720)
         .title("Julia Set")
+        .show_ms(true)
         .state(MouseState::physical())
         .input(MouseState::handle);
     canvas.render(|mouse, image| {
