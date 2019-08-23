@@ -78,25 +78,39 @@ impl<'a> Texture2dDataSource<'a> for &'a Image {
     }
 }
 
-type HandleFn<State> = fn(&Image, &mut State, &Event<()>);
+type HandleFn<State> = fn(&CanvasInfo, &mut State, &Event<()>);
 
-pub struct Canvas<State, Handler = HandleFn<State>> {
+pub struct CanvasInfo {
     width: u32,
     height: u32,
     title: String,
+    hidpi: bool,
+    dpi: f64,
+}
+
+pub struct Canvas<State, Handler = HandleFn<State>> {
+    info: CanvasInfo,
     image: Image,
     state: State,
     event_handler: Handler,
 }
 
-#[derive(Default)]
 pub struct MouseState {
     pub x: i32,
     pub y: i32,
+    pub physical_pixels: bool,
 }
 
 impl MouseState {
-    pub fn handle(image: &Image, mouse: &mut MouseState, event: &Event<()>) {
+    pub fn new() -> Self {
+        Self { x: 0, y: 0, physical_pixels: false }
+    }
+
+    pub fn physical() -> Self {
+        Self { x: 0, y: 0, physical_pixels: true }
+    }
+
+    pub fn handle(info: &CanvasInfo, mouse: &mut MouseState, event: &Event<()>) {
         match event {
             Event::WindowEvent {
                 event: WindowEvent::CursorMoved { position, .. },
@@ -104,7 +118,11 @@ impl MouseState {
             } => {
                 let (x, y): (i32, i32) = (*position).into();
                 mouse.x = x;
-                mouse.y = image.height() as i32 - y;
+                mouse.y = info.height as i32 - y;
+                if mouse.physical_pixels {
+                    mouse.x = (mouse.x as f64 * info.dpi) as i32;
+                    mouse.y = (mouse.y as f64 * info.dpi) as i32;
+                }
             }
             _ => (),
         }
@@ -114,9 +132,13 @@ impl MouseState {
 impl Canvas<()> {
     pub fn new(width: u32, height: u32) -> Canvas<()> {
         Canvas {
-            width,
-            height,
-            title: "Canvas".into(),
+            info: CanvasInfo {
+                width,
+                height,
+                hidpi: true,
+                dpi: 1.0,
+                title: "Canvas".into(),
+            },
             image: Image::new(width, height),
             state: (),
             event_handler: |_, (), _| {},
@@ -126,14 +148,12 @@ impl Canvas<()> {
 
 impl<State, Handler> Canvas<State, Handler>
 where
-    Handler: FnMut(&Image, &mut State, &Event<()>) + 'static,
+    Handler: FnMut(&CanvasInfo, &mut State, &Event<()>) + 'static,
     State: 'static,
 {
     pub fn state<NewState>(self, state: NewState) -> Canvas<NewState, HandleFn<NewState>> {
         Canvas {
-            width: self.width,
-            height: self.height,
-            title: self.title,
+            info: self.info,
             image: self.image,
             state,
             event_handler: |_, _, _| {},
@@ -142,19 +162,30 @@ where
 
     pub fn title(self, text: impl Into<String>) -> Self {
         Self {
-            title: text.into(),
+            info: CanvasInfo {
+                title: text.into(),
+                ..self.info
+            },
+            ..self
+        }
+    }
+
+    pub fn hidpi(self, enabled: bool) -> Self {
+        Self {
+            info: CanvasInfo {
+                hidpi: enabled,
+                ..self.info
+            },
             ..self
         }
     }
 
     pub fn input<NewHandler>(self, callback: NewHandler) -> Canvas<State, NewHandler>
     where
-        NewHandler: FnMut(&Image, &mut State, &Event<()>) + 'static,
+        NewHandler: FnMut(&CanvasInfo, &mut State, &Event<()>) + 'static,
     {
         Canvas {
-            width: self.width,
-            height: self.height,
-            title: self.title,
+            info: self.info,
             image: self.image,
             state: self.state,
             event_handler: callback,
@@ -164,21 +195,31 @@ where
     pub fn render(mut self, mut callback: impl FnMut(&mut State, &mut Image) + 'static) {
         let event_loop = glutin::event_loop::EventLoop::new();
         let wb = glutin::window::WindowBuilder::new()
-            .with_title(&self.title)
+            .with_title(&self.info.title)
             .with_inner_size(glutin::dpi::LogicalSize::new(
-                self.width as f64,
-                self.height as f64,
+                self.info.width as f64,
+                self.info.height as f64,
             ))
             .with_resizable(false);
         let cb = glutin::ContextBuilder::new().with_vsync(true);
         let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
+        self.info.dpi = if self.info.hidpi {
+            display.gl_window().window().hidpi_factor()
+        } else {
+            1.0
+        };
+
+        let width = (self.info.width as f64 * self.info.dpi) as u32;
+        let height = (self.info.height as f64 * self.info.dpi) as u32;
+        self.image = Image::new(width, height);
+
         let texture = glium::Texture2d::empty_with_format(
             &display,
             glium::texture::UncompressedFloatFormat::U8U8U8,
             glium::texture::MipmapsOption::NoMipmap,
-            self.width as u32,
-            self.height as u32,
+            width,
+            height,
         )
         .unwrap();
 
@@ -193,8 +234,8 @@ where
                         Rect {
                             left: 0,
                             bottom: 0,
-                            width: self.width as u32,
-                            height: self.height as u32,
+                            width: width as u32,
+                            height: height as u32,
                         },
                         &self.image,
                     );
@@ -213,7 +254,7 @@ where
                 } => {
                     *control_flow = ControlFlow::Exit;
                 }
-                event => (self.event_handler)(&self.image, &mut self.state, &event),
+                event => (self.event_handler)(&self.info, &mut self.state, &event),
             }
         })
     }
