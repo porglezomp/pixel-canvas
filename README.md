@@ -8,12 +8,12 @@ there are a lot of cool art and techniques on display there!
 ## Usage
 
 To make a piece of art, you create and configure a `Canvas` object, and then
-you ask it to `render` you. The canvas will do state management and hand you an
-image to modify. Whatever modifications you make to the image will be displayed
-on the screen.
+you ask it to `render` with your code. The canvas will do state management and
+hand you an image to modify. Whatever modifications you make to the image will
+be displayed on the screen.
 
 ```rust
-use pixel_canvas::{Canvas, Color, MouseState};
+use pixel_canvas::{Canvas, Color, input::MouseState};
 
 fn main() {
     // Configure the window that you want to draw in. You can add an event

@@ -1,4 +1,4 @@
-use pixel_canvas::{Canvas, Color, MouseState};
+use pixel_canvas::{input::MouseState, Canvas, Color};
 
 fn main() {
     let mut t = 0;

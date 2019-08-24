@@ -1,4 +1,4 @@
-use pixel_canvas::{Canvas, Color, MouseState};
+use pixel_canvas::{input::MouseState, Canvas, Color};
 
 fn add(z1: (f32, f32), z2: (f32, f32)) -> (f32, f32) {
     (z1.0 + z2.0, z1.1 + z2.1)

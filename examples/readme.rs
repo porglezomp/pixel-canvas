@@ -1,4 +1,4 @@
-use pixel_canvas::{Canvas, Color, MouseState};
+use pixel_canvas::{input::MouseState, Canvas, Color};
 
 fn main() {
     // Configure the window that you want to draw in. You can add an event
@@ -26,4 +26,3 @@ fn main() {
         }
     });
 }
-
