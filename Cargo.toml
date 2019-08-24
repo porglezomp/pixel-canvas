@@ -3,8 +3,18 @@ name = "pixel-canvas"
 version = "0.1.0"
 authors = ["Cassie Jones <code@witchoflight.com>"]
 edition = "2018"
+publish = false
+description = """
+A crate to make it easy to build interactive computer art with just a pixel buffer.
+"""
+repository = "https://github.com/porglezomp/pixel-canvas"
+keywords = ["image", "art", "interactive"]
+categories = ["graphics", "rendering"]
+license = "MIT OR Apache-2.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[badges]
+maintenance = { status = "actively-developed" }
 
 [dependencies]
 glium = "0.26.0-alpha3"
+
