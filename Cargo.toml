@@ -7,6 +7,7 @@ description = """
 A crate to make it easy to build interactive computer art with just a pixel buffer.
 """
 repository = "https://github.com/porglezomp/pixel-canvas"
+readme = "README.md"
 keywords = ["image", "art", "interactive"]
 categories = ["graphics", "rendering"]
 license = "MIT OR Apache-2.0"
