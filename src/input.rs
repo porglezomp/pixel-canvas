@@ -1,6 +1,9 @@
 //! Pre-built canvas input event handlers.
 //!
-//! These are used with the `state` and `input` methods on the Canvas.
+//! These are used with the [`state`] and [`input`] methods on the Canvas.
+//!
+//! [`state`]: ../canvas/struct.Canvas.html#method.state
+//! [`input`]: ../canvas/struct.Canvas.html#method.input
 
 // @Todo: Write docs on how write your own input handler.
 

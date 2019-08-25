@@ -1,10 +1,10 @@
-//! The `Canvas` is the main entry point of the library. It handles window
+//! The [`Canvas`] is the main entry point of the library. It handles window
 //! creation and input, calls your render callback, and presents the image on
 //! the screen.
 //!
-//! You create and configure a `Canvas` via builder methods. You can create
-//! a perfectly functionl, bare-bones canvas just by calling `Canvas::new`
-//! with your dimensions, and then calling `render`. If you
+//! You create and configure a [`Canvas`] via builder methods. You can create
+//! a perfectly functionl, bare-bones canvas just by calling [`Canvas::new`]
+//! with your dimensions, and then calling [`render`]. If you
 //! want a fancier canvas (like handling input, with a custom title, etc.) you
 //! can configure that as well. For example:
 //! ```rust
@@ -18,8 +18,13 @@
 //! ```
 //! This adds a 512x512 window called "Title", that renders in hidpi mode,
 //! displays the frame rendering time, and tracks the position of the mouse in
-//! physical pixels. For more information on event handlers, see the `input`
+//! physical pixels. For more information on event handlers, see the [`input`]
 //! module.
+//!
+//! [`Canvas`]: struct.Canvas.html
+//! [`Canvas::new`]: struct.Canvas.html#method.new
+//! [`render`]: struct.Canvas.html#method.render
+//! [`input`]: ../input/index.html
 //!
 //! Once you've created your canvas, you can use it to render your art. Do
 //! whatever you want in the render callback, the image you build will be
@@ -53,7 +58,7 @@ use std::time::{Duration, Instant};
 
 type EventHandler<State> = fn(&CanvasInfo, &mut State, &Event<()>);
 
-/// Information about the `Canvas`.
+/// Information about the [`Canvas`](struct.Canvas.html).
 pub struct CanvasInfo {
     /// The width of the canvas, in virtual pixels.
     pub width: u32,
@@ -72,8 +77,8 @@ pub struct CanvasInfo {
     pub show_ms: bool,
 }
 
-/// A `Canvas` manages a window and event loop, handing the current state to
-/// the renderer, and presenting its image on the screen.
+/// A [`Canvas`](struct.Canvas.html) manages a window and event loop, handing
+/// the current state to the renderer, and presenting its image on the screen.
 pub struct Canvas<State, Handler = EventHandler<State>> {
     info: CanvasInfo,
     image: Image,

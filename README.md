@@ -7,10 +7,13 @@ there are a lot of cool art pieces to see and explanations of fun techniques!
 
 ## Usage
 
-To make a piece of art, you create and configure a `Canvas` object, and
-then you ask it to `render` with your code. The canvas will do state
+To make a piece of art, you create and configure a [`Canvas`] object, and
+then you ask it to [`render`] with your code. The canvas will do state
 management and hand you an image to modify. Whatever modifications you make
 to the image will be displayed on the screen.
+
+[`Canvas`]: struct.Canvas.html
+[`render`]: struct.Canvas.html#method.render
 
 ## Example
 

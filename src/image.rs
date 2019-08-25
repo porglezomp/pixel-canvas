@@ -1,7 +1,9 @@
-//! The `Image` is what you manipulate to produce your art.
+//! The [`Image`] is what you manipulate to produce your art.
 //!
 //! Every frame you are given a mutable reference to the existing frame, and
 //! are able to modify it to produce your image.
+//!
+//! [`Image`]: struct.Image.html
 
 // @Todo: Add multiple pixel formats?
 // @Todo: Seaparate stride from width, and document.
@@ -28,9 +30,11 @@ pub struct Color {
 
 /// An image for editing.
 ///
-/// It dereferences to a slice of `Color`, so you can directly manipulate
+/// It dereferences to a slice of [`Color`], so you can directly manipulate
 /// pixels via regular (mutable) slice methods. In addition, you can index
 /// into the image by `(row, column)` pairs.
+///
+/// [`Color`]: struct.Color.html
 pub struct Image {
     width: u32,
     height: u32,
