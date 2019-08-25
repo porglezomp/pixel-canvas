@@ -9,6 +9,8 @@ matrix:
   fast_finish: true
 before_script:
   - rustup component add rustfmt
+  - cargo install cargo-readme
 script:
   - cargo test --verbose
   - cargo fmt --all -- --check
+  - ./gen-readme.sh --check

@@ -3,7 +3,6 @@ name = "pixel-canvas"
 version = "0.1.0"
 authors = ["Cassie Jones <code@witchoflight.com>"]
 edition = "2018"
-publish = false
 description = """
 A crate to make it easy to build interactive computer art with just a pixel buffer.
 """
@@ -14,6 +13,7 @@ license = "MIT OR Apache-2.0"
 
 [badges]
 maintenance = { status = "actively-developed" }
+travis-ci = { repository = "porglezomp/pixel-canvas", branch = "develop" }
 
 [dependencies]
 glium = "0.26.0-alpha3"
