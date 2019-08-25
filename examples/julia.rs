@@ -20,8 +20,8 @@ fn main() {
     let canvas = Canvas::new(1280, 720)
         .title("Julia Set")
         .show_ms(true)
-        .state(MouseState::physical())
-        .input(MouseState::handle);
+        .state(MouseState::new())
+        .input(MouseState::handle_input);
     canvas.render(|mouse, image| {
         let half_width = image.width() as i32 / 2;
         let half_height = image.height() as i32 / 2;

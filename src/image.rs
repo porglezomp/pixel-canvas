@@ -1,17 +1,36 @@
+//! The `Image` is what you manipulate to produce your art.
+//!
+//! Every frame you are given a mutable reference to the existing frame, and
+//! are able to modify it to produce your image.
+
+// @Todo: Add multiple pixel formats?
+// @Todo: Seaparate stride from width, and document.
+// @Todo: Explain colors.
+
 use glium::texture::{ClientFormat, RawImage2d, Texture2dDataSource};
 use std::{
     borrow::Cow,
     ops::{Deref, DerefMut, Index, IndexMut},
 };
 
+/// A single RGB-888 color.
+// This must be repr(C) in order to directly upload to the GPU.
 #[repr(C)]
 #[derive(Copy, Clone, Default)]
 pub struct Color {
+    /// The red component.
     pub r: u8,
+    /// The green component.
     pub g: u8,
+    /// The blue component.
     pub b: u8,
 }
 
+/// An image for editing.
+///
+/// It dereferences to a slice of `Color`, so you can directly manipulate
+/// pixels via regular (mutable) slice methods. In addition, you can index
+/// into the image by `(row, column)` pairs.
 pub struct Image {
     width: u32,
     height: u32,
@@ -19,18 +38,17 @@ pub struct Image {
 }
 
 impl Image {
+    /// The width of the image in pixels.
     pub fn width(&self) -> u32 {
         self.width
     }
 
+    /// The height of the image in pixels.
     pub fn height(&self) -> u32 {
         self.height
     }
 
-    pub fn pixels_mut(&mut self) -> &mut [Color] {
-        &mut self.pixels
-    }
-
+    /// Create an all-black image with the given dimensions.
     pub fn new(width: u32, height: u32) -> Image {
         Image {
             width,

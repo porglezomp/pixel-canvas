@@ -4,8 +4,8 @@ fn main() {
     let mut t = 0;
     let canvas = Canvas::new(1024, 512)
         .title("Rings")
-        .state(MouseState::physical())
-        .input(MouseState::handle);
+        .state(MouseState::new())
+        .input(MouseState::handle_input);
     canvas.render(move |mouse, image| {
         for row in 0..image.height() {
             for col in 0..image.width() {

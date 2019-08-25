@@ -6,8 +6,8 @@ fn main() {
     // provided.
     let canvas = Canvas::new(512, 512)
         .title("Tile")
-        .state(MouseState::physical())
-        .input(MouseState::handle);
+        .state(MouseState::new())
+        .input(MouseState::handle_input);
     // The canvas will render for you at up to 60fps.
     canvas.render(|mouse, image| {
         // Modify the `image` based on your state.

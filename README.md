@@ -1,16 +1,18 @@
-# Pixel Canvas
+# pixel-canvas
 
-This crate is designed to make it easy to build interactive computer art with
-just a pixel buffer. For inspiration, consider looking at
-<https://www.shadertoy.com> and <http://www.iquilezles.org/www/index.htm>,
-there are a lot of cool art and techniques on display there!
+This crate is designed to make it easy to build interactive computer art
+with just a pixel buffer. For inspiration, consider looking at
+<https://shadertoy.com> and <http://www.iquilezles.org/www/index.htm>,
+there are a lot of cool art pieces to see and explanations of fun techniques!
 
 ## Usage
 
-To make a piece of art, you create and configure a `Canvas` object, and then
-you ask it to `render` with your code. The canvas will do state management and
-hand you an image to modify. Whatever modifications you make to the image will
-be displayed on the screen.
+To make a piece of art, you create and configure a `Canvas` object, and
+then you ask it to `render` with your code. The canvas will do state
+management and hand you an image to modify. Whatever modifications you make
+to the image will be displayed on the screen.
+
+## Example
 
 ```rust
 use pixel_canvas::{Canvas, Color, input::MouseState};
@@ -21,8 +23,8 @@ fn main() {
     // provided.
     let canvas = Canvas::new(512, 512)
         .title("Tile")
-        .state(MouseState::physical())
-        .input(MouseState::handle);
+        .state(MouseState::new())
+        .input(MouseState::handle_input);
     // The canvas will render for you at up to 60fps.
     canvas.render(|mouse, image| {
         // Modify the `image` based on your state.
@@ -42,3 +44,5 @@ fn main() {
     });
 }
 ```
+
+License: MIT OR Apache-2.0
