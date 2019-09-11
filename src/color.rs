@@ -52,7 +52,7 @@ pub trait Blend<T> {
 
 impl Blend<u8> for u8 {
     fn blend(self, other: u8, factor: u8) -> u8 {
-        (self as i16 + ((other as i16 - self as i16) * (factor as i16) / 255)) as u8
+        (self as i16 + (((other as i16 - self as i16) * (factor as i16) + 127) / 255)) as u8
     }
 }
 
