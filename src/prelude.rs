@@ -4,4 +4,6 @@ pub use crate::{
     canvas::Canvas,
     color::{Blend, Color},
     image::{Image, RC, XY},
+    math::Restrict,
+    vector::Vec3,
 };

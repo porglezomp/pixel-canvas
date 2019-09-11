@@ -37,6 +37,7 @@ impl Color {
 pub trait Blend<T> {
     /// Blend between two values.
     /// ```rust
+    /// # use pixel_canvas::prelude::*;
     /// // Blend entirely in integer math.
     /// assert_eq!(100.blend(200, 0), 100);
     /// assert_eq!(100.blend(200, 128), 150);
@@ -51,7 +52,7 @@ pub trait Blend<T> {
 
 impl Blend<u8> for u8 {
     fn blend(self, other: u8, factor: u8) -> u8 {
-        (self as i16 + ((other as i16 - self as i16) * (factor as i16) >> 8)) as u8
+        (self as i16 + ((other as i16 - self as i16) * (factor as i16) / 255)) as u8
     }
 }
 

@@ -52,7 +52,9 @@ pub mod canvas;
 pub mod color;
 pub mod image;
 pub mod input;
+pub mod math;
 pub mod prelude;
+pub mod vector;
 
 #[doc(inline)]
 pub use prelude::*;
