@@ -1,5 +1,5 @@
 //! Useful common math operations for doing art.
-use std::ops::{RangeFrom, RangeInclusive, RangeToInclusive};
+use std::ops::{Add, Div, Mul, Range, RangeFrom, RangeInclusive, RangeToInclusive, Sub};
 
 /// Represent types that can be restricted by a given range type.
 ///
@@ -52,5 +52,28 @@ where
             return range.start;
         }
         self
+    }
+}
+
+/// Represents a type that can be mapped between two ranges.
+pub trait Remap where Self: Sized {
+    /// Remap a value from one range to another. A value outside the bounds of
+    /// one range will be similarly outside the bounds of the other.
+    /// ```rust
+    /// # use pixel_canvas::prelude::*;
+    /// assert_eq!(5.remap(-10..10, -100..100), 50);
+    /// assert_eq!(0.5.remap(0.0..1.0, -1.0..1.0), 0.0);
+    /// ```
+    fn remap(self, from: Range<Self>, onto: Range<Self>) -> Self;
+}
+
+impl<T> Remap for T
+where
+    T: Add<Output=T> + Sub<Output=T> + Mul<Output=T> + Div<Output=T> + Copy,
+{
+    fn remap(self, from: Range<Self>, onto: Range<Self>) -> Self {
+        let from_size = from.end - from.start;
+        let onto_size = onto.end - onto.start;
+        ((self - from.start) * onto_size / from_size) + onto.start
     }
 }
