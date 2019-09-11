@@ -56,17 +56,20 @@ use glium::{
 };
 use std::time::{Duration, Instant};
 
-type EventHandler<State> = fn(&CanvasInfo, &mut State, &Event<()>);
+/// A type that represents an event handler.
+///
+/// It returns true if the state is changed.
+pub type EventHandler<State> = fn(&CanvasInfo, &mut State, &Event<()>) -> bool;
 
 /// Information about the [`Canvas`](struct.Canvas.html).
 pub struct CanvasInfo {
     /// The width of the canvas, in virtual pixels.
-    pub width: u32,
-    /// The height of the canvas, in vritual pixels.
-    pub height: u32,
+    pub width: usize,
+    /// The height of the canvas, in virtual pixels.
+    pub height: usize,
     /// The base title for the window.
     pub title: String,
-    /// Whether the canvas will render in hidpi mode.
+    /// Whether the canvas will render in hidpi mode. Defaults to `false`.
     pub hidpi: bool,
     /// The DPI factor. If hidpi is on, the virtual dimensions are multiplied
     /// by this factor to create the actual image resolution. For example, if
@@ -74,7 +77,11 @@ pub struct CanvasInfo {
     /// twice the resolution that you specified.
     pub dpi: f64,
     /// Whether the window title will display the time to render a frame.
+    /// Defaults to `false`.
     pub show_ms: bool,
+    /// Only call the render callback if there's a state change.
+    /// Defaults to `false`, which means it will instead render at a fixed framerate.
+    pub render_on_change: bool,
 }
 
 /// A [`Canvas`](struct.Canvas.html) manages a window and event loop, handing
@@ -88,26 +95,27 @@ pub struct Canvas<State, Handler = EventHandler<State>> {
 
 impl Canvas<()> {
     /// Create a new canvas with a given virtual window dimensions.
-    pub fn new(width: u32, height: u32) -> Canvas<()> {
+    pub fn new(width: usize, height: usize) -> Canvas<()> {
         Canvas {
             info: CanvasInfo {
                 width,
                 height,
-                hidpi: true,
+                hidpi: false,
                 dpi: 1.0,
                 title: "Canvas".into(),
                 show_ms: false,
+                render_on_change: false,
             },
             image: Image::new(width, height),
             state: (),
-            event_handler: |_, (), _| {},
+            event_handler: |_, (), _| false,
         }
     }
 }
 
 impl<State, Handler> Canvas<State, Handler>
 where
-    Handler: FnMut(&CanvasInfo, &mut State, &Event<()>) + 'static,
+    Handler: FnMut(&CanvasInfo, &mut State, &Event<()>) -> bool + 'static,
     State: 'static,
 {
     /// Set the attached state.
@@ -118,7 +126,7 @@ where
             info: self.info,
             image: self.image,
             state,
-            event_handler: |_, _, _| {},
+            event_handler: |_, _, _| false,
         }
     }
 
@@ -135,7 +143,7 @@ where
 
     /// Toggle hidpi render.
     ///
-    /// Defaults to true.
+    /// Defaults to `false`.
     /// If you have a hidpi monitor, this will cause the image to be larger
     /// than the dimensions you specified when creating the canvas.
     pub fn hidpi(self, enabled: bool) -> Self {
@@ -150,11 +158,24 @@ where
 
     /// Whether to show a frame duration in the title bar.
     ///
-    /// Defaults to false.
+    /// Defaults to `false`.
     pub fn show_ms(self, enabled: bool) -> Self {
         Self {
             info: CanvasInfo {
                 show_ms: enabled,
+                ..self.info
+            },
+            ..self
+        }
+    }
+
+    /// Whether to render a new frame only on state changes.
+    ///
+    /// Defaults to `false`, which means it will render at a fixed framerate.
+    pub fn render_on_change(self, enabled: bool) -> Self {
+        Self {
+            info: CanvasInfo {
+                render_on_change: enabled,
                 ..self.info
             },
             ..self
@@ -168,7 +189,7 @@ where
     /// canvas information, the current state, and the inciting event.
     pub fn input<NewHandler>(self, callback: NewHandler) -> Canvas<State, NewHandler>
     where
-        NewHandler: FnMut(&CanvasInfo, &mut State, &Event<()>) + 'static,
+        NewHandler: FnMut(&CanvasInfo, &mut State, &Event<()>) -> bool + 'static,
     {
         Canvas {
             info: self.info,
@@ -181,8 +202,9 @@ where
     /// Provide a rendering callback.
     ///
     /// The canvas will call your rendering callback on demant, with the
-    /// current state and a reference to the image. Currently this will be
-    /// called at 60 fps.
+    /// current state and a reference to the image. Depending on settings,
+    /// this will either be called at 60fps, or only called when state changes.
+    /// See [`render_on_change`](struct.Canvas.html#method.render_on_change).
     pub fn render(mut self, mut callback: impl FnMut(&mut State, &mut Image) + 'static) {
         let event_loop = glutin::event_loop::EventLoop::new();
         let wb = glutin::window::WindowBuilder::new()
@@ -201,61 +223,69 @@ where
             1.0
         };
 
-        let width = (self.info.width as f64 * self.info.dpi) as u32;
-        let height = (self.info.height as f64 * self.info.dpi) as u32;
+        let width = (self.info.width as f64 * self.info.dpi) as usize;
+        let height = (self.info.height as f64 * self.info.dpi) as usize;
         self.image = Image::new(width, height);
 
         let texture = glium::Texture2d::empty_with_format(
             &display,
             glium::texture::UncompressedFloatFormat::U8U8U8,
             glium::texture::MipmapsOption::NoMipmap,
-            width,
-            height,
+            width as u32,
+            height as u32,
         )
         .unwrap();
 
         let mut next_frame_time = Instant::now();
-        event_loop.run(move |event, _, control_flow| {
-            *control_flow = ControlFlow::WaitUntil(next_frame_time);
-            match event {
-                Event::NewEvents(StartCause::ResumeTimeReached { .. })
-                | Event::NewEvents(StartCause::Init) => {
-                    next_frame_time = Instant::now() + Duration::from_nanos(16_666_667);
-                    let frame_start = Instant::now();
-
-                    callback(&mut self.state, &mut self.image);
-                    texture.write(
-                        Rect {
-                            left: 0,
-                            bottom: 0,
-                            width: width as u32,
-                            height: height as u32,
-                        },
-                        &self.image,
-                    );
-
-                    let target = display.draw();
-                    texture
-                        .as_surface()
-                        .fill(&target, glium::uniforms::MagnifySamplerFilter::Linear);
-                    target.finish().unwrap();
-
-                    let frame_end = Instant::now();
-                    if self.info.show_ms {
-                        display.gl_window().window().set_title(&format!(
-                            "{} - {:3}ms",
-                            self.info.title,
-                            frame_end.duration_since(frame_start).as_millis()
-                        ));
-                    }
+        let mut should_render = true;
+        event_loop.run(move |event, _, control_flow| match event {
+            Event::NewEvents(StartCause::ResumeTimeReached { .. })
+            | Event::NewEvents(StartCause::Init) => {
+                next_frame_time = Instant::now() + Duration::from_nanos(16_666_667);
+                *control_flow = ControlFlow::WaitUntil(next_frame_time);
+                if !should_render {
+                    return;
                 }
-                glutin::event::Event::WindowEvent {
-                    event: glutin::event::WindowEvent::CloseRequested,
-                    ..
-                } => {
-                    *control_flow = ControlFlow::Exit;
+                if self.info.render_on_change {
+                    should_render = false;
                 }
-                event => (self.event_handler)(&self.info, &mut self.state, &event),
+                let frame_start = Instant::now();
+
+                callback(&mut self.state, &mut self.image);
+                texture.write(
+                    Rect {
+                        left: 0,
+                        bottom: 0,
+                        width: width as u32,
+                        height: height as u32,
+                    },
+                    &self.image,
+                );
+
+                let target = display.draw();
+                texture
+                    .as_surface()
+                    .fill(&target, glium::uniforms::MagnifySamplerFilter::Linear);
+                target.finish().unwrap();
+
+                let frame_end = Instant::now();
+                if self.info.show_ms {
+                    display.gl_window().window().set_title(&format!(
+                        "{} - {:3}ms",
+                        self.info.title,
+                        frame_end.duration_since(frame_start).as_millis()
+                    ));
+                }
+            }
+            glutin::event::Event::WindowEvent {
+                event: glutin::event::WindowEvent::CloseRequested,
+                ..
+            } => {
+                *control_flow = ControlFlow::Exit;
+            }
+            event => {
+                let changed = (self.event_handler)(&self.info, &mut self.state, &event);
+                should_render = changed || !self.info.render_on_change;
             }
         })
     }

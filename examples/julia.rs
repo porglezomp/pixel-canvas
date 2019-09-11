@@ -1,4 +1,4 @@
-use pixel_canvas::{input::MouseState, Canvas, Color};
+use pixel_canvas::{input::MouseState, prelude::*};
 
 fn add(z1: (f32, f32), z2: (f32, f32)) -> (f32, f32) {
     (z1.0 + z2.0, z1.1 + z2.1)
@@ -49,7 +49,7 @@ fn main() {
                     r = 0;
                     g = 0;
                 }
-                image[(row, col)] = Color { r, g, b: 0 };
+                image[RC(row, col)] = Color { r, g, b: 0 };
             }
         }
     });

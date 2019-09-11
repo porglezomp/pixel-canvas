@@ -49,10 +49,10 @@
 //! ```
 
 pub mod canvas;
+pub mod color;
 pub mod image;
 pub mod input;
+pub mod prelude;
 
 #[doc(inline)]
-pub use canvas::Canvas;
-#[doc(inline)]
-pub use image::{Color, Image};
+pub use prelude::*;

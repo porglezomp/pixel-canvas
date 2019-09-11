@@ -50,7 +50,7 @@ impl MouseState {
     }
 
     /// Handle input for the mouse. For use with the `input` method.
-    pub fn handle_input(info: &CanvasInfo, mouse: &mut MouseState, event: &Event<()>) {
+    pub fn handle_input(info: &CanvasInfo, mouse: &mut MouseState, event: &Event<()>) -> bool {
         match event {
             Event::WindowEvent {
                 event: WindowEvent::CursorMoved { position, .. },
@@ -61,8 +61,9 @@ impl MouseState {
                 mouse.virtual_y = y;
                 mouse.x = (x as f64 * info.dpi) as i32;
                 mouse.y = ((info.height as i32 - y) as f64 * info.dpi) as i32;
+                true
             }
-            _ => (),
+            _ => false,
         }
     }
 }

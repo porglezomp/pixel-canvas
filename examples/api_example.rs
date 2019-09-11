@@ -1,4 +1,4 @@
-use pixel_canvas::{input::MouseState, Canvas, Color};
+use pixel_canvas::{input::MouseState, prelude::*};
 
 fn main() {
     let mut t = 0;
@@ -15,7 +15,7 @@ fn main() {
                 let r = if dist < t * t { 255 } else { 0 };
                 let g = ((r as u16).wrapping_mul(t as u16) >> 8) as u8;
                 let b = ((g as u32).wrapping_mul(dist as u32) >> 12) as u8;
-                image[(row, col)] = Color { r, g, b };
+                image[RC(row, col)] = Color { r, g, b };
             }
         }
         t += 1;
