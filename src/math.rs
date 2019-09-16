@@ -56,7 +56,10 @@ where
 }
 
 /// Represents a type that can be mapped between two ranges.
-pub trait Remap where Self: Sized {
+pub trait Remap
+where
+    Self: Sized,
+{
     /// Remap a value from one range to another. A value outside the bounds of
     /// one range will be similarly outside the bounds of the other.
     /// ```rust
@@ -69,7 +72,7 @@ pub trait Remap where Self: Sized {
 
 impl<T> Remap for T
 where
-    T: Add<Output=T> + Sub<Output=T> + Mul<Output=T> + Div<Output=T> + Copy,
+    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Div<Output = T> + Copy,
 {
     fn remap(self, from: Range<Self>, onto: Range<Self>) -> Self {
         let from_size = from.end - from.start;
