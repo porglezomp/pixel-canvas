@@ -19,3 +19,8 @@ travis-ci = { repository = "porglezomp/pixel-canvas", branch = "develop" }
 [dependencies]
 glium = "0.26.0-alpha3"
 
+[dev-dependencies]
+rayon = "1.2"
+rand = "0.7"
+rand_distr = "0.2"
+packed_simd = "0.3"
