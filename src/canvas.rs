@@ -218,7 +218,7 @@ where
         let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
         self.info.dpi = if self.info.hidpi {
-            display.gl_window().window().hidpi_factor()
+            display.gl_window().window().scale_factor()
         } else {
             1.0
         };
