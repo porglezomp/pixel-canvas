@@ -17,10 +17,10 @@ maintenance = { status = "actively-developed" }
 travis-ci = { repository = "porglezomp/pixel-canvas", branch = "develop" }
 
 [dependencies]
-glium = "0.26.0"
+glium = "0.28.0"
 
 [dev-dependencies]
 rayon = "1.2"
 rand = "0.7"
 rand_distr = "0.2"
-packed_simd = "0.3"
+packed_simd = { version = "0.3.4", package = "packed_simd_2" }
