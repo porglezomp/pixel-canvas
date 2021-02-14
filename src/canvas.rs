@@ -227,7 +227,7 @@ where
         let height = (self.info.height as f64 * self.info.dpi) as usize;
         self.image = Image::new(width, height);
 
-        let texture = glium::Texture2d::empty_with_format(
+        let mut texture = glium::Texture2d::empty_with_format(
             &display,
             glium::texture::UncompressedFloatFormat::U8U8U8,
             glium::texture::MipmapsOption::NoMipmap,
@@ -252,6 +252,22 @@ where
                 let frame_start = Instant::now();
 
                 callback(&mut self.state, &mut self.image);
+                let width = self.image.width() as u32;
+                let height = self.image.height() as u32;
+                if width != texture.width() || height != texture.height() {
+                    texture = glium::Texture2d::empty_with_format(
+                        &display,
+                        glium::texture::UncompressedFloatFormat::U8U8U8,
+                        glium::texture::MipmapsOption::NoMipmap,
+                        width,
+                        height,
+                    )
+                    .unwrap();
+                    display
+                        .gl_window()
+                        .window()
+                        .set_inner_size(glutin::dpi::LogicalSize::new(width as f64, height as f64));
+                }
                 texture.write(
                     Rect {
                         left: 0,
