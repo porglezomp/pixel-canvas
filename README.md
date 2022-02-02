@@ -50,4 +50,10 @@ fn main() {
 }
 ```
 
+or run an included example (with nightly):
+
+```sh
+cargo +nightly run --example api_example
+```
+
 License: MIT OR Apache-2.0
