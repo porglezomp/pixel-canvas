@@ -25,7 +25,7 @@ use std::{
 pub struct Image {
     width: usize,
     height: usize,
-    pixels: Vec<Color>,
+    pub pixels: Vec<Color>,
 }
 
 /// A row/column pair for indexing into an image.
